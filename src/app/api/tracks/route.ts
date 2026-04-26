@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+let tablesEnsured = false;
+
+async function ensureTables() {
+  if (tablesEnsured) return;
+  try {
+    // Use raw pg to create tables (Prisma needs tables to exist)
+    const { Pool } = await import('pg');
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    
+    await pool.query(`CREATE TABLE IF NOT EXISTS "ContactMessage" ("id" TEXT NOT NULL PRIMARY KEY, "name" TEXT NOT NULL, "email" TEXT NOT NULL, "company" TEXT, "venueType" TEXT, "message" TEXT NOT NULL, "isRead" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS "Track" ("id" TEXT NOT NULL PRIMARY KEY, "title" TEXT NOT NULL, "titleRu" TEXT NOT NULL, "description" TEXT, "genre" TEXT, "duration" DOUBLE PRECISION, "fileName" TEXT, "audioData" TEXT, "audioMimeType" TEXT, "order" INTEGER NOT NULL DEFAULT 0, "isActive" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL)`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS "SiteSetting" ("id" TEXT NOT NULL PRIMARY KEY, "key" TEXT NOT NULL, "value" TEXT NOT NULL, "updatedAt" TIMESTAMP(3) NOT NULL)`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS "SiteSetting_key_key" ON "SiteSetting"("key")`);
+    
+    await pool.end();
+    tablesEnsured = true;
+  } catch (e) {
+    tablesEnsured = true; // don't retry
+  }
+}
+
 export async function GET() {
   try {
+    await ensureTables();
     const tracks = await db.track.findMany({
       where: { isActive: true },
       orderBy: { order: 'asc' },
@@ -19,7 +41,6 @@ export async function GET() {
         isActive: true,
         createdAt: true,
         updatedAt: true,
-        // Do NOT include audioData in list — too heavy
       },
     });
 
@@ -35,6 +56,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    await ensureTables();
     const contentType = request.headers.get('content-type') || '';
 
     let title: string;
@@ -47,7 +69,6 @@ export async function POST(request: NextRequest) {
     let audioMimeType: string | null = null;
 
     if (contentType.includes('multipart/form-data')) {
-      // FormData: file + text fields in one request
       const formData = await request.formData();
       title = (formData.get('title') as string) || '';
       titleRu = (formData.get('titleRu') as string) || '';
@@ -76,14 +97,12 @@ export async function POST(request: NextRequest) {
         audioMimeType = file.type && file.type !== 'audio/mp3' ? file.type : (mimeMap[ext] || 'audio/mpeg');
       }
 
-      // Also accept pre-encoded base64 from upload step
       const preEncoded = formData.get('audioData') as string | null;
       if (preEncoded && !audioData) {
         audioData = preEncoded;
         audioMimeType = (formData.get('audioMimeType') as string) || null;
       }
     } else {
-      // JSON body (legacy: two-step upload)
       const body = await request.json();
       title = body.title || '';
       titleRu = body.titleRu || '';
@@ -102,7 +121,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get max order
     const maxOrder = await db.track.findFirst({
       orderBy: { order: 'desc' },
       select: { order: true },
