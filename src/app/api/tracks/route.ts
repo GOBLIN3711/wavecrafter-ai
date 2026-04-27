@@ -2,8 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export const runtime = 'edge';
-
 export async function GET() {
   try {
     const tracks = await db.track.findMany({
@@ -24,33 +22,27 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const title = (formData.get('title') as string) || '';
-    const titleRu = (formData.get('titleRu') as string) || '';
-    const genre = (formData.get('genre') as string) || '';
-    const description = (formData.get('description') as string) || '';
-    const file = formData.get('file') as File | null;
-
-    let fileName = '';
-    let audioUrl = '';
-
-    if (file && file.size > 0) {
-      const { put } = await import('@vercel/blob');
-      const blob = await put(file.name, file, { access: 'public' });
-      audioUrl = blob.url;
-      fileName = file.name;
-    }
+    const body = await request.json();
+    const title = (body.title as string) || '';
+    const titleRu = (body.titleRu as string) || '';
+    const genre = (body.genre as string) || null;
+    const description = (body.description as string) || null;
+    const fileName = (body.fileName as string) || null;
+    const audioUrl = (body.audioUrl as string) || null;
 
     if (!title.trim() || !titleRu.trim()) {
-      return NextResponse.json({ error: 'Title required' }, { status: 400 });
+      return NextResponse.json({ error: 'Title and TitleRu are required' }, { status: 400 });
     }
 
     const maxOrder = await db.track.findFirst({ orderBy: { order: 'desc' }, select: { order: true } });
     const track = await db.track.create({
       data: {
-        title: title.trim(), titleRu: titleRu.trim(),
-        genre: genre?.trim() || null, description: description?.trim() || null,
-        fileName: fileName || null, audioUrl: audioUrl || null,
+        title: title.trim(),
+        titleRu: titleRu.trim(),
+        genre: genre?.trim() || null,
+        description: description?.trim() || null,
+        fileName: fileName || null,
+        audioUrl: audioUrl || null,
         order: (maxOrder?.order ?? -1) + 1,
       },
     });
