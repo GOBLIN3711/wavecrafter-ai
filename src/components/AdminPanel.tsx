@@ -447,7 +447,7 @@ function MusicTab() {
       });
       if (res.ok) { resetForm(); fetchAllTracks(); }
       else { const err = await res.json(); alert(err.error || 'Ошибка создания трека'); }
-    } catch { alert('Произошла ошибка'); }
+    } catch (e) { alert('Ошибка: ' + (e instanceof Error ? e.message : String(e))); }
     finally { setUploading(false); }
   };
 
