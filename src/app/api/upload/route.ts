@@ -10,7 +10,8 @@ export async function POST(request: Request) {
     );
   }
   try {
-    const blob = await handleUpload({ request });
+    const body = await request.json();
+    const blob = await handleUpload({ body, request });
     return Response.json(blob);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Upload failed';
