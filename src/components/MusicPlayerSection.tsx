@@ -28,6 +28,7 @@ interface DbTrack {
   genre: string | null;
   duration: number | null;
   fileName: string | null;
+  audioUrl: string | null;
   order: number;
   isActive: boolean;
 }
@@ -37,7 +38,7 @@ interface UnifiedTrack {
   title: string;
   titleRu: string;
   genre: string;
-  fileName: string | null;
+  audioUrl: string | null;
   isDemo: boolean;
   demoType?: TrackConfig['type'];
 }
@@ -72,7 +73,7 @@ function AudioPlayer() {
               title: t.title,
               titleRu: t.titleRu,
               genre: t.genre || 'Unknown',
-              fileName: t.fileName,
+              audioUrl: t.audioUrl,
               isDemo: false,
             }));
 
@@ -175,10 +176,10 @@ function AudioPlayer() {
         // Stop engine if switching to real audio
         engine.current.stop();
 
-        if (htmlAudioRef.current && htmlAudioRef.current.src.includes(`/api/music/${currentTrackData.id}`)) {
+        if (htmlAudioRef.current && htmlAudioRef.current.src === currentTrackData.audioUrl) {
           htmlAudioRef.current.play();
         } else {
-          const audio = new Audio(`/api/music/${currentTrackData.id}`);
+          const audio = new Audio(currentTrackData.audioUrl!);
           audio.volume = isMuted ? 0 : volume;
           audio.onended = () => {
             setIsPlaying(false);
@@ -231,7 +232,7 @@ function AudioPlayer() {
         engine.current.play();
         setIsPlaying(true);
       } else {
-        const audio = new Audio(`/api/music/${targetTrack.id}`);
+        const audio = new Audio(targetTrack.audioUrl!);
         audio.volume = isMuted ? 0 : volume;
         audio.onended = () => {
           setIsPlaying(false);
