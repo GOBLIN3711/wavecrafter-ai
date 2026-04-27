@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
 import { db } from '@/lib/db';
 
 let tablesEnsured = false;
@@ -20,9 +19,7 @@ async function ensureTables() {
   }
 }
 
-// ============================================================
-// GET — return list of tracks (used by player and admin panel)
-// ============================================================
+// GET — return list of tracks
 export async function GET() {
   try {
     await ensureTables();
@@ -30,68 +27,62 @@ export async function GET() {
       where: { isActive: true },
       orderBy: { order: 'asc' },
       select: {
-        id: true,
-        title: true,
-        titleRu: true,
-        description: true,
-        genre: true,
-        duration: true,
-        fileName: true,
-        audioUrl: true,
-        order: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
+        id: true, title: true, titleRu: true, description: true,
+        genre: true, duration: true, fileName: true, audioUrl: true,
+        order: true, isActive: true, createdAt: true, updatedAt: true,
       },
     });
     return NextResponse.json(tracks);
   } catch (error) {
     console.error('Tracks fetch error:', error);
-    // Return empty array instead of error — player will show demo tracks
     return NextResponse.json([]);
   }
 }
 
-// ============================================================
-// POST — upload new track (file goes to Vercel Blob, info to DB)
-// ============================================================
-const ALLOWED_TYPES = [
-  'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/aac',
-  'audio/mp4', 'audio/x-m4a', 'audio/webm', 'audio/mp3',
-];
-const MAX_SIZE = 50 * 1024 * 1024;
-
+// POST — create track (accepts FormData with optional file)
 export async function POST(request: NextRequest) {
   try {
     await ensureTables();
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
-    const title = (formData.get('title') as string) || '';
-    const titleRu = (formData.get('titleRu') as string) || '';
-    const genre = (formData.get('genre') as string) || '';
-    const description = (formData.get('description') as string) || '';
+    const contentType = request.headers.get('content-type') || '';
+
+    let title = '';
+    let titleRu = '';
+    let genre = '';
+    let description = '';
+    let fileName = '';
+    let audioUrl = '';
+
+    if (contentType.includes('multipart/form-data')) {
+      // FormData upload (file + metadata)
+      const formData = await request.formData();
+      title = (formData.get('title') as string) || '';
+      titleRu = (formData.get('titleRu') as string) || '';
+      genre = (formData.get('genre') as string) || '';
+      description = (formData.get('description') as string) || '';
+      const file = formData.get('file') as File | null;
+
+      if (file && file.size > 0) {
+        if (!process.env.BLOB_READ_WRITE_TOKEN) {
+          return NextResponse.json({ error: 'Blob store not connected. Check Vercel > Storage > Blob.' }, { status: 500 });
+        }
+        const { put } = await import('@vercel/blob');
+        const blob = await put(file.name, file, { access: 'public' });
+        audioUrl = blob.url;
+        fileName = file.name;
+      }
+    } else {
+      // JSON upload (metadata only, no file)
+      const body = await request.json();
+      title = body.title || '';
+      titleRu = body.titleRu || '';
+      genre = body.genre || '';
+      description = body.description || '';
+      fileName = body.fileName || '';
+      audioUrl = body.audioUrl || '';
+    }
 
     if (!title.trim() || !titleRu.trim()) {
       return NextResponse.json({ error: 'Title and titleRu are required' }, { status: 400 });
-    }
-
-    let audioUrl: string | null = null;
-    let fileName: string | null = null;
-
-    if (file && file.size > 0) {
-      if (!ALLOWED_TYPES.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|aac|m4a|webm)$/i)) {
-        return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
-      }
-      if (file.size > MAX_SIZE) {
-        return NextResponse.json({ error: 'File too large (max 50MB)' }, { status: 400 });
-      }
-
-      const blob = await put(`music/${Date.now()}_${file.name}`, file, {
-        access: 'public',
-        addRandomSuffix: true,
-      });
-      audioUrl = blob.url;
-      fileName = file.name;
     }
 
     const maxOrder = await db.track.findFirst({
@@ -104,17 +95,18 @@ export async function POST(request: NextRequest) {
       data: {
         title: title.trim(),
         titleRu: titleRu.trim(),
-        genre: genre.trim() || null,
-        description: description.trim() || null,
-        fileName,
-        audioUrl,
+        genre: genre?.trim() || null,
+        description: description?.trim() || null,
+        fileName: fileName || null,
+        audioUrl: audioUrl || null,
         order: trackOrder,
       },
     });
 
     return NextResponse.json(track, { status: 201 });
   } catch (error) {
-    console.error('Track upload error:', error);
-    return NextResponse.json({ error: 'Failed to upload track' }, { status: 500 });
+    console.error('Track creation error:', error);
+    const msg = error instanceof Error ? error.message : 'Failed to create track';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
