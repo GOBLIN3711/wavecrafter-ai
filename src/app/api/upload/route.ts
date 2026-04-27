@@ -1,24 +1,17 @@
-import { put } from '@vercel/blob';
+import { handleUpload } from '@vercel/blob/client';
 
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return Response.json({ error: 'BLOB_READ_WRITE_TOKEN not found. Go to Vercel > Settings > Blob and connect it to this project.' }, { status: 500 });
+  }
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-
-    if (!file) {
-      return Response.json({ error: 'File not found' }, { status: 400 });
-    }
-
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      return Response.json({ error: 'Blob store not connected. Go to Vercel > Settings > Blob.' }, { status: 500 });
-    }
-
-    const blob = await put(file.name, file, { access: 'public' });
+    const body = await request.json();
+    const blob = await handleUpload({ body, request });
     return Response.json(blob);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Upload failed';
-    return Response.json({ error: message }, { status: 500 });
+    return Response.json({ error: message }, { status: 400 });
   }
 }
