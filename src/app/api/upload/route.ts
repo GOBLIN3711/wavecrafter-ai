@@ -4,11 +4,13 @@ export const runtime = 'edge';
 
 export async function POST(request: Request) {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return Response.json({ error: 'BLOB_READ_WRITE_TOKEN not found. Go to Vercel > Settings > Blob and connect it to this project.' }, { status: 500 });
+    return Response.json(
+      { error: 'BLOB_READ_WRITE_TOKEN not found' },
+      { status: 500 }
+    );
   }
   try {
-    const body = await request.json();
-    const blob = await handleUpload({ body, request });
+    const blob = await handleUpload({ request });
     return Response.json(blob);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Upload failed';
