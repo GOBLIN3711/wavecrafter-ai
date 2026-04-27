@@ -422,16 +422,28 @@ function MusicTab() {
     if (!formTitle.trim() || !formTitleRu.trim()) return;
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('title', formTitle.trim());
-      formData.append('titleRu', formTitleRu.trim());
-      if (formGenre.trim()) formData.append('genre', formGenre.trim());
-      if (formDescription.trim()) formData.append('description', formDescription.trim());
-      if (formFile) formData.append('file', formFile);
-
+     let audioUrl: string | null = null;
+      let fileName: string | null = null;
+      if (formFile) {
+        const { upload } = await import('@vercel/blob/client');
+        const blob = await upload(formFile, {
+          access: 'public',
+          handleUploadUrl: '/api/upload',
+        });
+        audioUrl = blob.url;
+        fileName = formFile.name;
+      }
       const res = await fetch('/api/tracks', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formTitle.trim(),
+          titleRu: formTitleRu.trim(),
+          genre: formGenre.trim() || null,
+          description: formDescription.trim() || null,
+          fileName,
+          audioUrl,
+        }),
       });
       if (res.ok) { resetForm(); fetchAllTracks(); }
       else { const err = await res.json(); alert(err.error || 'Ошибка создания трека'); }
