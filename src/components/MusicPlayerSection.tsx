@@ -80,34 +80,26 @@ function AudioPlayer() {
           // Only add demo tracks if no real tracks exist
           if (dbUnified.length > 0) {
             setAllTracks(dbUnified);
-          } else {
-            const demoUnified: UnifiedTrack[] = DEMO_TRACKS.map((t, i) => ({
-              id: `demo-${i}`,
-              title: t.title,
-              titleRu: t.titleRu,
-              genre: t.genre,
-              fileName: null,
-              isDemo: true,
-              demoType: t.type,
-            }));
-            setAllTracks(demoUnified);
+            setIsLoading(false);
+            return;
           }
         }
       } catch {
-        // Fallback to demo tracks on error
-        const demoUnified: UnifiedTrack[] = DEMO_TRACKS.map((t, i) => ({
-          id: `demo-${i}`,
-          title: t.title,
-          titleRu: t.titleRu,
-          genre: t.genre,
-          fileName: null,
-          isDemo: true,
-          demoType: t.type,
-        }));
-        setAllTracks(demoUnified);
-      } finally {
-        setIsLoading(false);
+        // API error — fall through to demo tracks
       }
+
+      // Always show demo tracks as fallback
+      const demoUnified: UnifiedTrack[] = DEMO_TRACKS.map((t, i) => ({
+        id: `demo-${i}`,
+        title: t.title,
+        titleRu: t.titleRu,
+        genre: t.genre,
+        audioUrl: null,
+        isDemo: true,
+        demoType: t.type,
+      }));
+      setAllTracks(demoUnified);
+      setIsLoading(false);
     }
     fetchTracks();
   }, []);

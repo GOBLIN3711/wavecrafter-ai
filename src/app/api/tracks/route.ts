@@ -20,11 +20,46 @@ async function ensureTables() {
   }
 }
 
+// ============================================================
+// GET — return list of tracks (used by player and admin panel)
+// ============================================================
+export async function GET() {
+  try {
+    await ensureTables();
+    const tracks = await db.track.findMany({
+      where: { isActive: true },
+      orderBy: { order: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        titleRu: true,
+        description: true,
+        genre: true,
+        duration: true,
+        fileName: true,
+        audioUrl: true,
+        order: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return NextResponse.json(tracks);
+  } catch (error) {
+    console.error('Tracks fetch error:', error);
+    // Return empty array instead of error — player will show demo tracks
+    return NextResponse.json([]);
+  }
+}
+
+// ============================================================
+// POST — upload new track (file goes to Vercel Blob, info to DB)
+// ============================================================
 const ALLOWED_TYPES = [
   'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/aac',
   'audio/mp4', 'audio/x-m4a', 'audio/webm', 'audio/mp3',
 ];
-const MAX_SIZE = 50 * 1024 * 1024; // 50MB — Blob supports this
+const MAX_SIZE = 50 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,7 +86,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'File too large (max 50MB)' }, { status: 400 });
       }
 
-      // Upload to Vercel Blob
       const blob = await put(`music/${Date.now()}_${file.name}`, file, {
         access: 'public',
         addRandomSuffix: true,
@@ -60,7 +94,6 @@ export async function POST(request: NextRequest) {
       fileName = file.name;
     }
 
-    // Get max order
     const maxOrder = await db.track.findFirst({
       orderBy: { order: 'desc' },
       select: { order: true },
