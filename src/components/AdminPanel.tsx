@@ -431,17 +431,19 @@ function MusicTab() {
     setFormFile(null); setShowAddForm(false);
   };
 
-  const handleAddTrack = async () => {
+const handleAddTrack = async () => {
     if (!formTitle.trim() || !formTitleRu.trim()) return;
     setUploading(true);
     try {
-     let audioUrl: string | null = null;
+      let audioUrl: string | null = null;
       let fileName: string | null = null;
       if (formFile) {
-       const { upload } = await import('@vercel/blob/client');
-        const blob = await upload(formFile, {
+        const { upload } = await import('@vercel/blob/client');
+        const arrayBuffer = await formFile.arrayBuffer();
+        const blob = await upload(formFile.name, arrayBuffer, {
           access: 'public',
           handleUploadUrl: '/api/upload',
+          contentType: formFile.type,
         });
         audioUrl = blob.url;
         fileName = formFile.name;
