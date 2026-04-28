@@ -460,7 +460,7 @@ function MusicTab() {
         }
         const blobData = await uploadRes.json();
         audioUrl = blobData.url;
-        audioUrl = blob.url;
+       
         fileName = formFile.name;
       }
       const res = await fetch('/api/tracks', {
