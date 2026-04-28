@@ -371,11 +371,16 @@ function MusicTab() {
     try {let audioUrl: string | null = null;
       let fileName: string | null = null;
       if (formFile) {
-              const { upload } = await import('@vercel/blob/client');
-        const blob = await upload(formFile, {
-          access: 'public',
-          handleUploadUrl: '/api/upload',
+              const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'content-type': formFile.type || 'application/octet-stream',
+            'x-vercel-filename': formFile.name,
+          },
+          body: formFile,
         });
+        if (!uploadRes.ok) throw new Error('Upload failed');
+        const blob = await uploadRes.json();
         audioUrl = blob.url;
         fileName = formFile.name;
       }
