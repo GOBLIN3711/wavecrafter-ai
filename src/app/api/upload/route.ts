@@ -4,8 +4,8 @@ export const runtime = 'edge';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const blob = await handleUpload({ body, request });
+    
+    const blob = await handleUpload({ request });
     return Response.json(blob);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Upload failed';
