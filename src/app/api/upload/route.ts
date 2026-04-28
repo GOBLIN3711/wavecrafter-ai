@@ -1,13 +1,11 @@
-import { put } from '@vercel/blob';
+import { handleUpload } from '@vercel/blob/client';
 
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
   try {
-    const filename = request.headers.get('x-filename') || 'audio.mp3';
-    const contentType = request.headers.get('content-type') || 'application/octet-stream';
-    const body = await request.arrayBuffer();
-    const blob = await put(filename, body, { access: 'public', type: contentType });
+    const body = await request.json();
+    const blob = await handleUpload({ body, request });
     return Response.json(blob);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Upload failed';
