@@ -368,7 +368,27 @@ function MusicTab() {
 
   const fetchAllTracks = useCallback(async () => {
     setLoading(true);
-    try {
+    try {let audioUrl: string | null = null;
+      let fileName: string | null = null;
+      if (formFile) {
+        const fileBuffer = await formFile.arrayBuffer();
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'x-filename': formFile.name,
+            'content-type': formFile.type || 'application/octet-stream',
+          },
+          body: fileBuffer,
+        });
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json();
+          throw new Error(errData.error || 'Upload failed');
+        }
+        const blobData = await uploadRes.json();
+        audioUrl = blobData.url;
+        fileName = formFile.name;
+      }
+
       const res = await fetch('/api/tracks');
       if (res.ok) {
         const data = await res.json();
