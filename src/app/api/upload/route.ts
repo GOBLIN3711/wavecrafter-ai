@@ -1,17 +1,13 @@
-import { handleUpload } from '@vercel/blob/client';
+import { put } from '@vercel/blob';
 
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return Response.json(
-      { error: 'BLOB_READ_WRITE_TOKEN not found' },
-      { status: 500 }
-    );
-  }
   try {
-    const body = await request.json();
-    const blob = await handleUpload({ body, request });
+    const filename = request.headers.get('x-filename') || 'audio.mp3';
+    const contentType = request.headers.get('content-type') || 'application/octet-stream';
+    const body = await request.arrayBuffer();
+    const blob = await put(filename, body, { access: 'public', type: contentType });
     return Response.json(blob);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Upload failed';
