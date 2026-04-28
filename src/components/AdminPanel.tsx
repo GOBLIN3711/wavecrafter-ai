@@ -436,22 +436,12 @@ function MusicTab() {
      let audioUrl: string | null = null;
       let fileName: string | null = null;
       if (formFile) {
-       const fileBuffer = await formFile.arrayBuffer();
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'x-filename': formFile.name,
-            'content-type': formFile.type || 'application/octet-stream',
-          },
-          body: fileBuffer,
+       const { upload } = await import('@vercel/blob/client');
+        const blob = await upload(formFile, {
+          access: 'public',
+          handleUploadUrl: '/api/upload',
         });
-        if (!uploadRes.ok) {
-          const errData = await uploadRes.json();
-          throw new Error(errData.error || 'Upload failed');
-        }
-        const blobData = await uploadRes.json();
-        audioUrl = blobData.url;
-       
+        audioUrl = blob.url;
         fileName = formFile.name;
       }
       const res = await fetch('/api/tracks', {
