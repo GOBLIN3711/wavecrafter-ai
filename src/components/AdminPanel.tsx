@@ -372,9 +372,11 @@ function MusicTab() {
       let fileName: string | null = null;
       if (formFile) {
              const { upload } = await import('@vercel/blob/client');
-        const blob = await upload(formFile.name, formFile, {
+        const arrayBuffer = await formFile.arrayBuffer();
+        const blob = await upload(formFile.name, arrayBuffer, {
           access: 'public',
           handleUploadUrl: '/api/upload',
+          contentType: formFile.type,
         });
         audioUrl = blob.url;
         fileName = formFile.name;
