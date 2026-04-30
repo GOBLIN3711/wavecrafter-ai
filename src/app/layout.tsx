@@ -1,4 +1,5 @@
 
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -45,6 +46,7 @@ export const metadata: Metadata = {
   },
   verification: {
     google: "O6tHju4tqyfV3MDvBTSU_-QW_7yx043LjsO0mDGHewY",
+    yandex: "bb24d9906c374f4b",
   },
   openGraph: {
     title: "WaveCrafter AI — Bespoke Music for Venues & Events",
