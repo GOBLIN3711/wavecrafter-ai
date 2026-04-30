@@ -47,6 +47,7 @@ export const metadata: Metadata = {
   verification: {
     google: "O6tHju4tqyfV3MDvBTSU_-QW_7yx043LjsO0mDGHewY",
     yandex: "bb24d9906c374f4b",
+    bing: "817EE70A1C17482E7692E71120ECB418",
   },
   openGraph: {
     title: "WaveCrafter AI — Bespoke Music for Venues & Events",
