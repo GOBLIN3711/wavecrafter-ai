@@ -29,13 +29,30 @@ export const metadata: Metadata = {
     "AI music",
     "restaurant music",
     "hotel music",
+    "bar music",
     "brand sound",
     "sonic identity",
     "ambient music",
+    "background music",
     "music production",
+    "music for restaurants",
+    "music for hotels",
+    "music for cafes",
+    "music for events",
+    "music for weddings",
+    "music for spas",
+    "day-part music programming",
+    "zone-specific sound design",
     "авторская музыка",
     "музыка для ресторанов",
+    "музыка для отелей",
+    "музыка для баров",
+    "музыка для кафе",
     "музыка для бизнеса",
+    "саунд-дизайн",
+    "аудио-брендинг",
+    "музыкальное оформление",
+    "фоновая музыка",
   ],
   authors: [{ name: "WaveCrafter AI" }],
   robots: {
@@ -66,6 +83,35 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "MusicBusiness",
+  name: "WaveCrafter AI",
+  url: "https://wavecrafter-ai.vercel.app",
+  logo: "https://wavecrafter-ai.vercel.app",
+  description:
+    "WaveCrafter AI creates unique, bespoke music compositions for restaurants, bars, hotels, and events worldwide. AI-powered original music production.",
+  email: "grossboss@inbox.ru",
+  priceRange: "$$",
+  areaServed: "Worldwide",
+  serviceType: [
+    "Custom Music Production",
+    "Restaurant Music",
+    "Hotel Music",
+    "Bar Music",
+    "Cafe Music",
+    "Event Music",
+    "Wedding Music",
+    "Spa Music",
+    "Sonic Identity Design",
+    "Audio Branding",
+    "Background Music",
+    "Ambient Music",
+  ],
+  knowsLanguage: ["English", "Russian", "French"],
+  sameAs: [],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -75,6 +121,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="msvalidate.01" content="817EE70A1C17482E7692E71120ECB418" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0a0a] text-white`}
