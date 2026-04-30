@@ -47,7 +47,6 @@ export const metadata: Metadata = {
   verification: {
     google: "O6tHju4tqyfV3MDvBTSU_-QW_7yx043LjsO0mDGHewY",
     yandex: "bb24d9906c374f4b",
-    bing: "817EE70A1C17482E7692E71120ECB418",
   },
   openGraph: {
     title: "WaveCrafter AI — Bespoke Music for Venues & Events",
@@ -73,6 +72,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="msvalidate.01" content="817EE70A1C17482E7692E71120ECB418" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0a0a] text-white`}
       >
